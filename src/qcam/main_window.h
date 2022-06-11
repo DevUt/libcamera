@@ -66,7 +66,7 @@ private Q_SLOTS:
 	void processRaw(libcamera::FrameBuffer *buffer,
 			const libcamera::ControlList &metadata);
 
-	void queueRequest(libcamera::FrameBuffer *buffer);
+	void refillRequest(libcamera::FrameBuffer *buffer);
 
 private:
 	int createToolbars();
@@ -80,6 +80,7 @@ private:
 	void addCamera(std::shared_ptr<libcamera::Camera> camera);
 	void removeCamera(std::shared_ptr<libcamera::Camera> camera);
 
+	int queueRequest(libcamera::Request* request);
 	void requestComplete(libcamera::Request *request);
 	void processCapture();
 	void processHotplug(HotplugEvent *e);
