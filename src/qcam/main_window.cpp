@@ -151,6 +151,15 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 		return;
 	}
 
+	if (options_.isSet(OptCaptureScript)) {
+		std::string scriptName = options_[OptCaptureScript].toString();
+		script_ = std::make_unique<CaptureScript>(camera_, scriptName);
+		if (!script_->valid()) {
+			QMessageBox::critical(this, tr("Invalid Script"), tr("Couldn't execute the capture script"));
+			script_.reset();
+		}
+	}
+
 	startStopAction_->setChecked(true);
 }
 
