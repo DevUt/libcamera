@@ -42,6 +42,7 @@ enum {
 	OptRenderer = 'r',
 	OptStream = 's',
 	OptVerbose = 'v',
+	OptCaptureScript = 256,
 };
 
 class MainWindow : public QMainWindow
