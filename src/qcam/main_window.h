@@ -26,6 +26,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
 #include "viewfinder.h"
 
@@ -86,11 +87,14 @@ private:
 	void processHotplug(HotplugEvent *e);
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
+	void chooseScript();
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
 	QComboBox *cameraCombo_;
 	QAction *saveRaw_;
+	QAction *scriptExecAction_;
 	ViewFinder *viewfinder_;
 
 	QIcon iconPlay_;
@@ -112,6 +116,7 @@ private:
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;
+	bool isScriptExecuting_;
 	bool captureRaw_;
 	libcamera::Stream *vfStream_;
 	libcamera::Stream *rawStream_;
@@ -124,6 +129,8 @@ private:
 	QElapsedTimer frameRateInterval_;
 	uint32_t previousFrames_;
 	uint32_t framesCaptured_;
+	uint32_t queueCount_;
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
+	std::unique_ptr<CaptureScript> script_;
 };
