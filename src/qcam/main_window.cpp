@@ -20,6 +20,7 @@
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
+#include <QMessageBox>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -232,6 +233,13 @@ int MainWindow::createToolbars()
 	saveRaw_ = action;
 #endif
 
+	/* Open Script... action. */
+	action = toolbar_->addAction(QIcon::fromTheme("document-open",
+						      QIcon(":file.svg")),
+				     "Open Capture Script");
+	connect(action, &QAction::triggered, this, &MainWindow::chooseScript);
+	scriptExecAction_ = action;
+
 	return 0;
 }
 
@@ -253,6 +261,60 @@ void MainWindow::updateTitle()
 	previousFrames_ = framesCaptured_;
 
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
+}
+
+/**
+ * \brief Load a capture script for handling the capture session.
+ *
+ * If already capturing, it would restart the capture.
+ */
+void MainWindow::chooseScript()
+{
+	if (script_) {
+		/*
+		 * This is the second valid press of load script button,
+		 * It indicates stopping, Stop and set button for new script.
+		 */
+		script_.reset();
+		scriptExecAction_->setIcon(QIcon::fromTheme("document-open",
+							    QIcon(":file.svg")));
+		scriptExecAction_->setText("Open Capture Script");
+		return;
+	}
+
+	QString scriptFile = QFileDialog::getOpenFileName(this, "Open Capture Script", QDir::currentPath(),
+							  "Capture Script (*.yaml)");
+	if (scriptFile.isEmpty())
+		return;
+
+	/* 
+	 * If we are already capturing,
+	 * stop so we don't have stuck image in viewfinder. 
+	 */
+	bool wasCapturing = isCapturing_;
+	if(isCapturing_)
+		toggleCapture(false);
+
+	script_ = std::make_unique<CaptureScript>(camera_, scriptFile.toStdString());
+	if (!script_->valid()) {
+		script_.reset();
+		QMessageBox::critical(this, "Invalid Script",
+					      "Couldn't load the capture script");
+		if(wasCapturing)
+			toggleCapture(true);
+		return;
+	}
+
+	/*
+	 * Valid script verified
+	 * Set the button to indicate stopping availibility.
+	 */
+	scriptExecAction_->setIcon(QIcon(":x-square.svg"));
+	scriptExecAction_->setText("Stop Script execution");
+
+	/* Start capture again if we were capturing before. */
+	if(wasCapturing)
+		toggleCapture(true);
 }
 
 /* -----------------------------------------------------------------------------
@@ -510,6 +572,7 @@ int MainWindow::startCapture()
 	previousFrames_ = 0;
 	framesCaptured_ = 0;
 	lastBufferTime_ = 0;
+	queueCount_ = 0;
 
 	ret = camera_->start();
 	if (ret) {
@@ -789,5 +852,10 @@ void MainWindow::renderComplete(FrameBuffer *buffer)
 
 int MainWindow::queueRequest(Request *request)
 {
+	if (script_)
+		request->controls() = script_->frameControls(queueCount_);
+
+	queueCount_++;
+
 	return camera_->queueRequest(request);
 }
