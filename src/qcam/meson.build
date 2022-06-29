@@ -29,6 +29,7 @@ qcam_sources = files([
 qcam_moc_headers = files([
     'main_window.h',
     'viewfinder_qt.h',
+    'settings/float_slider.h',
 ])
 
 qcam_resources = files([
