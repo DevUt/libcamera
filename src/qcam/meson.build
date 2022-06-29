@@ -32,6 +32,7 @@ qcam_moc_headers = files([
     'main_window.h',
     'viewfinder_qt.h',
     'settings/controls.h',
+    'settings/float_slider.h',
     'settings/settings_window.h'
 ])
 
