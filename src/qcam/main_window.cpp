@@ -30,10 +30,13 @@
 #include <QtDebug>
 
 #include "../cam/image.h"
+
 #include "dng_writer.h"
 #ifndef QT_NO_OPENGL
 #include "viewfinder_gl.h"
 #endif
+#include "settings/settings_window.h"
+
 #include "viewfinder_qt.h"
 
 using namespace libcamera;
@@ -254,6 +257,10 @@ int MainWindow::createToolbars()
 	connect(action, &QAction::triggered, this, &MainWindow::chooseScript);
 	scriptExecAction_ = action;
 
+	/* Settings Window.. action. */
+	action = toolbar_->addAction(QIcon(":settings.svg"), "Open Settings Window");
+	connect(action, &QAction::triggered, this, &MainWindow::openSettingsWin);
+
 	return 0;
 }
 
@@ -329,6 +336,20 @@ void MainWindow::chooseScript()
 	/* Start capture again if we were capturing before. */
 	if (wasCapturing)
 		toggleCapture(true);
+}
+
+void MainWindow::openSettingsWin()
+{
+	if (settingWin_) {
+		settingWin_->show();
+		return;
+	}
+	settingWin_ = std::make_unique<SettingsWindow>(camera_, this);
+	settingWin_->setAttribute(Qt::WA_QuitOnClose);
+	settingWin_->setWindowFlag(Qt::Dialog);
+	settingWin_->show();
+
+	connect(settingWin_.get(), &SettingsWindow::controlsChanged, this, &MainWindow::controlLatch);
 }
 
 /* -----------------------------------------------------------------------------
@@ -866,10 +887,28 @@ void MainWindow::renderComplete(FrameBuffer *buffer)
 
 int MainWindow::queueRequest(Request *request)
 {
-	if (script_)
-		request->controls() = script_->frameControls(queueCount_);
-
+	controlLatch(nullptr);
+	request->controls() = controlLatched_;
 	queueCount_++;
 
 	return camera_->queueRequest(request);
+}
+
+void MainWindow::controlLatch(std::shared_ptr<ControlList> control)
+{
+	/*
+	 * If this is provided a non-null shared_ptr,
+	 * it means we have been alerted by the signal.
+	 * 
+	 * Stop the script, and reset the button.
+	 */
+	if (control) {
+		script_.reset();
+		scriptExecAction_->setIcon(QIcon::fromTheme("document-open",
+							    QIcon(":file.svg")));
+		scriptExecAction_->setText("Open Capture Script");
+		controlLatched_ = (*control);
+	}
+	if (script_)
+		controlLatched_ = script_->frameControls(queueCount_);
 }

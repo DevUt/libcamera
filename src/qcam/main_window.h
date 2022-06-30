@@ -28,6 +28,8 @@
 
 #include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
+#include "settings/settings_window.h"
+
 #include "viewfinder.h"
 
 class QAction;
@@ -70,6 +72,8 @@ private Q_SLOTS:
 
 	void renderComplete(libcamera::FrameBuffer *buffer);
 
+	void controlLatch(std::shared_ptr<ControlList> control);
+
 private:
 	int createToolbars();
 
@@ -89,6 +93,7 @@ private:
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
 	void chooseScript();
+	void openSettingsWin();
 
 	/* UI elements */
 	QToolBar *toolbar_;
@@ -133,4 +138,7 @@ private:
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 	std::unique_ptr<CaptureScript> script_;
+	ControlList controlLatched_;
+
+	std::unique_ptr<SettingsWindow> settingWin_;
 };
