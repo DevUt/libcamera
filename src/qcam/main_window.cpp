@@ -34,6 +34,8 @@
 #ifndef QT_NO_OPENGL
 #include "viewfinder_gl.h"
 #endif
+#include "settings/settings_window.h"
+
 #include "viewfinder_qt.h"
 
 using namespace libcamera;
@@ -254,6 +256,10 @@ int MainWindow::createToolbars()
 	connect(action, &QAction::triggered, this, &MainWindow::chooseScript);
 	scriptExecAction_ = action;
 
+	/* Settings Window.. action. */
+	action = toolbar_->addAction(QIcon(":settings.svg"), "Open Settings Window");
+	connect(action, &QAction::triggered, this, &MainWindow::openSettingsWin);
+
 	return 0;
 }
 
@@ -329,6 +335,19 @@ void MainWindow::chooseScript()
 	/* Start capture again if we were capturing before. */
 	if (wasCapturing)
 		toggleCapture(true);
+}
+
+void MainWindow::openSettingsWin()
+{
+	if (settingWin_) {
+		settingWin_->show();
+		return;
+	}
+	settingWin_ = std::make_unique<SettingsWindow>(camera_, this);
+	settingWin_->setAttribute(Qt::WA_QuitOnClose);
+	settingWin_->setWindowFlag(Qt::Dialog);
+	settingWin_->show();
+
 }
 
 /* -----------------------------------------------------------------------------
@@ -868,7 +887,6 @@ int MainWindow::queueRequest(Request *request)
 {
 	if (script_)
 		request->controls() = script_->frameControls(queueCount_);
-
 	queueCount_++;
 
 	return camera_->queueRequest(request);

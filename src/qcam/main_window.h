@@ -28,6 +28,8 @@
 
 #include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
+#include "settings/settings_window.h"
+
 #include "viewfinder.h"
 
 class QAction;
@@ -89,6 +91,7 @@ private:
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
 	void chooseScript();
+	void openSettingsWin();
 
 	/* UI elements */
 	QToolBar *toolbar_;
@@ -133,4 +136,5 @@ private:
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 	std::unique_ptr<CaptureScript> script_;
+	std::unique_ptr<SettingsWindow> settingWin_;
 };
