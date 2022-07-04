@@ -93,6 +93,8 @@ private:
 	void chooseScript();
 	void openSettingsWin();
 
+	void toggleScriptAction(bool showAvailable);
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;

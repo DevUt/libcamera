@@ -163,8 +163,7 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 		}
 
 		/* Show stopping availability. */
-		scriptExecAction_->setIcon(QIcon(":x-square.svg"));
-		scriptExecAction_->setText("Stop Script execution");
+		toggleScriptAction(false);
 	}
 
 	startStopAction_->setChecked(true);
@@ -254,6 +253,8 @@ int MainWindow::createToolbars()
 						      QIcon(":file.svg")),
 				     "Open Capture Script");
 	connect(action, &QAction::triggered, this, &MainWindow::chooseScript);
+
+	/* Do not operate directly call toggleScriptAction */
 	scriptExecAction_ = action;
 
 	/* Settings Window.. action. */
@@ -295,10 +296,7 @@ void MainWindow::chooseScript()
 		 * This is the second valid press of load script button,
 		 * It indicates stopping, Stop and set button for new script.
 		 */
-		script_.reset();
-		scriptExecAction_->setIcon(QIcon::fromTheme("document-open",
-							    QIcon(":file.svg")));
-		scriptExecAction_->setText("Open Capture Script");
+		toggleScriptAction(true);
 		return;
 	}
 
@@ -329,12 +327,24 @@ void MainWindow::chooseScript()
 	 * Valid script verified
 	 * Set the button to indicate stopping availibility.
 	 */
-	scriptExecAction_->setIcon(QIcon(":x-square.svg"));
-	scriptExecAction_->setText("Stop Script execution");
+	toggleScriptAction(false);
 
 	/* Start capture again if we were capturing before. */
 	if (wasCapturing)
 		toggleCapture(true);
+}
+
+void MainWindow::toggleScriptAction(bool showAvailable)
+{
+	if (showAvailable) {
+		script_.reset();
+		scriptExecAction_->setIcon(QIcon::fromTheme("document-open",
+							    QIcon(":file.svg")));
+		scriptExecAction_->setText("Open Capture Script");
+	} else {
+		scriptExecAction_->setIcon(QIcon(":x-square.svg"));
+		scriptExecAction_->setText("Stop Script execution");
+	}
 }
 
 void MainWindow::openSettingsWin()
@@ -347,7 +357,6 @@ void MainWindow::openSettingsWin()
 	settingWin_->setAttribute(Qt::WA_QuitOnClose);
 	settingWin_->setWindowFlag(Qt::Dialog);
 	settingWin_->show();
-
 }
 
 /* -----------------------------------------------------------------------------
