@@ -357,6 +357,9 @@ void MainWindow::openSettingsWin()
 	settingWin_->setAttribute(Qt::WA_QuitOnClose);
 	settingWin_->setWindowFlag(Qt::Dialog);
 	settingWin_->show();
+
+	connect(settingWin_.get(), &SettingsWindow::controlsChanged,
+		this, &MainWindow::controlLatch);
 }
 
 /* -----------------------------------------------------------------------------
@@ -894,9 +897,26 @@ void MainWindow::renderComplete(FrameBuffer *buffer)
 
 int MainWindow::queueRequest(Request *request)
 {
-	if (script_)
-		request->controls() = script_->frameControls(queueCount_);
+	controlLatch(nullptr);
+	request->controls() = controlLatched_;
+
 	queueCount_++;
 
 	return camera_->queueRequest(request);
+}
+
+void MainWindow::controlLatch(std::shared_ptr<ControlList> control)
+{
+	/*
+	 * If this is provided a non-null shared_ptr,
+	 * it means we have been alerted by the signal.
+	 *
+	 * Stop the script, and reset the button.
+	 */
+	if (control) {
+		toggleScriptAction(true);
+		controlLatched_ = (*control);
+	}
+	if (script_)
+		controlLatched_ = script_->frameControls(queueCount_);
 }

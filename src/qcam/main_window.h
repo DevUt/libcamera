@@ -72,6 +72,8 @@ private Q_SLOTS:
 
 	void renderComplete(libcamera::FrameBuffer *buffer);
 
+	void controlLatch(std::shared_ptr<ControlList> control);
+
 private:
 	int createToolbars();
 
@@ -139,4 +141,5 @@ private:
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 	std::unique_ptr<CaptureScript> script_;
 	std::unique_ptr<SettingsWindow> settingWin_;
+	ControlList controlLatched_;
 };

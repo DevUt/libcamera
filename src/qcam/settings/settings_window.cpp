@@ -9,6 +9,7 @@
 
 #include <libcamera/camera.h>
 
+#include <QFormLayout>
 #include <QLabel>
 #include <QSlider>
 #include <QString>
@@ -24,8 +25,11 @@ SettingsWindow::SettingsWindow(std::shared_ptr<libcamera::Camera> camera_, QWidg
 
 	QTabWidget *settingTabs = new QTabWidget(this);
 
+	/* Add the controls tab */
 	ControlsTab *controlTabInstance = new ControlsTab(camera_, this);
 	settingTabs->addTab(controlTabInstance, QString::fromStdString("Controls"));
+	connect(controlTabInstance, &ControlsTab::cntrlListChanged,
+		this, &SettingsWindow::controlsChanged);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addWidget(settingTabs);

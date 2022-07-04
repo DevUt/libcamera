@@ -12,6 +12,9 @@
 #include <libcamera/camera.h>
 
 #include <QDialog>
+#include <QHBoxLayout>
+#include <QTabWidget>
+#include <QVBoxLayout>
 
 using namespace libcamera;
 class SettingsWindow : public QDialog
@@ -21,4 +24,7 @@ class SettingsWindow : public QDialog
 public:
 	SettingsWindow(std::shared_ptr<libcamera::Camera> camera_, QWidget *parent);
 	~SettingsWindow(){};
+
+Q_SIGNALS:
+	void controlsChanged(std::shared_ptr<ControlList> controlList);
 };
