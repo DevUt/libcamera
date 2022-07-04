@@ -90,6 +90,8 @@ private:
 
 	void chooseScript();
 
+	void toggleScriptAction(bool showAvailable);
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
