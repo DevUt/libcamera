@@ -353,6 +353,7 @@ void MainWindow::openSettingsWin()
 		settingWin_->show();
 		return;
 	}
+
 	settingWin_ = std::make_unique<SettingsWindow>(camera_, this);
 	settingWin_->setAttribute(Qt::WA_QuitOnClose);
 	settingWin_->setWindowFlag(Qt::Dialog);
