@@ -22,6 +22,7 @@
 ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_, QWidget *parent)
 	: QWidget(parent)
 {
+	// TODO: Fix using rebase  parent of formlayout
 	QFormLayout *controlFLayout = new QFormLayout();
 
 	controlList_ = std::make_shared<ControlList>();
@@ -35,6 +36,7 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_, QWidget *pa
 	}
 
 	controlFLayout->setSpacing(20);
+	controlFLayout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
 	setLayout(controlFLayout);
 }
 
@@ -61,14 +63,16 @@ QWidget *ControlsIndv::controlItemHLayout_()
 			qCheckBox_->setCheckState(Qt::Unchecked);
 		return qCheckBox_;
 
-	case ControlTypeFloat:
+	case ControlTypeFloat: {
 		fSlider_ = new FloatSlider(this);
 		fSlider_->setOrientation(Qt::Horizontal);
 		fSlider_->setRange(info_.min().get<float>(), info_.max().get<float>());
 		fSlider_->setValue(info_.def().get<float>());
 		connect(fSlider_, &FloatSlider::valueChanged,
 			this, &ControlsIndv::controlChange);
-		return fSlider_;
+		SliderLayout *slideLayout = new SliderLayout(fSlider_, this);
+		return slideLayout;
+	}
 	default:
 		return (new QLabel(QString::fromStdString("Currently not supported"), this));
 	}
