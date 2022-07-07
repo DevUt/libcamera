@@ -52,6 +52,7 @@ private:
 
 	FloatSlider *fSlider_;
 	QCheckBox *qCheckBox_;
+	Slider *iSlider_;
 
 private Q_SLOTS:
 	void controlChange();

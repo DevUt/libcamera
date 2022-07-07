@@ -73,6 +73,17 @@ QWidget *ControlsIndv::controlItemHLayout_()
 		SliderLayout *slideLayout = new SliderLayout(fSlider_, this);
 		return slideLayout;
 	}
+
+	case ControlTypeInteger32: {
+		iSlider_ = new Slider(this);
+		iSlider_->setOrientation(Qt::Horizontal);
+		iSlider_->setRange(info_.min().get<int32_t>(), info_.max().get<int32_t>());
+		iSlider_->setValue(info_.def().get<int32_t>());
+		connect(iSlider_, &Slider::valueChanged,
+			this, &ControlsIndv::controlChange);
+		SliderLayout *slideLayout = new SliderLayout(iSlider_, this);
+		return slideLayout;
+	}
 	default:
 		return (new QLabel(QString::fromStdString("Currently not supported"), this));
 	}
@@ -89,6 +100,10 @@ void ControlsIndv::controlChange()
 
 	case ControlTypeFloat:
 		controlVal.set<float>(fSlider_->value());
+		break;
+
+	case ControlTypeInteger32:
+		controlVal.set<int32_t>(iSlider_->value());
 		break;
 	default:
 		return;
