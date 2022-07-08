@@ -58,6 +58,9 @@ public:
 
 	bool event(QEvent *e) override;
 
+Q_SIGNALS:
+	void currentControlValue(const libcamera::ControlList);
+
 private Q_SLOTS:
 	void quit();
 	void updateTitle();

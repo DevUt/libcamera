@@ -30,6 +30,7 @@ SettingsWindow::SettingsWindow(std::shared_ptr<libcamera::Camera> camera_, QWidg
 	settingTabs->addTab(controlTabInstance, QString::fromStdString("Controls"));
 	connect(controlTabInstance, &ControlsTab::cntrlListChanged,
 		this, &SettingsWindow::controlsChanged);
+	connect(this,&SettingsWindow::controlUpdate,controlTabInstance,&ControlsTab::unpackControls);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addWidget(settingTabs);

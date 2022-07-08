@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <map>
+#include <string>
+
 #include <libcamera/camera.h>
 #include <libcamera/controls.h>
 
@@ -18,6 +21,8 @@
 
 using namespace libcamera;
 
+class ControlsIndv;
+
 class ControlsTab : public QWidget
 {
 	Q_OBJECT
@@ -28,11 +33,15 @@ public:
 
 private:
 	std::shared_ptr<ControlList> controlList_;
+	std::map<const unsigned int, ControlsIndv *> controlsMap_;
+
+public Q_SLOTS:
+	void unpackControls(const libcamera::ControlList);
 
 private Q_SLOTS:
 	void changeCntrlList(const libcamera::ControlId *control, const ControlValue value);
 
-Q_SIGNALS :
+Q_SIGNALS:
 	void cntrlListChanged(std::shared_ptr<ControlList> controls);
 };
 
@@ -44,7 +53,10 @@ public:
 	ControlsIndv(const libcamera::ControlId *control, const libcamera::ControlInfo info);
 	~ControlsIndv(){};
 
+	QLayout *controlNameLayout_();
 	QWidget *controlItemHLayout_();
+
+	void updateValue(const libcamera::ControlValue controlValue);
 
 private:
 	const libcamera::ControlId *control_;
@@ -52,6 +64,7 @@ private:
 
 	FloatSlider *fSlider_;
 	QCheckBox *qCheckBox_;
+	QLabel *currValueLabel_;
 	Slider *iSlider_;
 
 private Q_SLOTS:

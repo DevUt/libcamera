@@ -27,4 +27,5 @@ public:
 
 Q_SIGNALS:
 	void controlsChanged(std::shared_ptr<ControlList> controlList);
+	void controlUpdate(const libcamera::ControlList);
 };

@@ -11,11 +11,12 @@
 
 #include <libcamera/camera.h>
 
-#include <QFormLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QSlider>
 #include <QString>
 #include <QVBoxLayout>
+#include <QtDebug>
 
 #include "float_slider.h"
 
@@ -23,21 +24,25 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_, QWidget *pa
 	: QWidget(parent)
 {
 	// TODO: Fix using rebase  parent of formlayout
-	QFormLayout *controlFLayout = new QFormLayout();
+	QGridLayout *controlGLayout = new QGridLayout(this);
 
 	controlList_ = std::make_shared<ControlList>();
 
+	int controlcount = 0;
 	for (const auto &[control, info] : camera_->controls()) {
 		ControlsIndv *controlItem = new ControlsIndv(control, info);
-		controlFLayout->addRow(QString::fromStdString(control->name()),
-				       controlItem->controlItemHLayout_());
+		controlsMap_[control->id()] = controlItem;
+
+		controlGLayout->addLayout(controlItem->controlNameLayout_(),controlcount,0);
+		controlGLayout->addWidget(controlItem->controlItemHLayout_(),controlcount,1);
+
+		controlItem->updateValue(info.def());
+		controlcount++;
+
 		connect(controlItem, &ControlsIndv::indvCntrlChanged,
 			this, &ControlsTab::changeCntrlList);
 	}
 
-	controlFLayout->setSpacing(20);
-	controlFLayout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
-	setLayout(controlFLayout);
 }
 
 void ControlsTab::changeCntrlList(const libcamera::ControlId *control,
@@ -45,6 +50,12 @@ void ControlsTab::changeCntrlList(const libcamera::ControlId *control,
 {
 	controlList_->set(control->id(), value);
 	Q_EMIT cntrlListChanged(controlList_);
+}
+
+void ControlsTab::unpackControls(const libcamera::ControlList controlList)
+{
+	for (auto &[controlId, controlValue] : controlList)
+		controlsMap_[controlId]->updateValue(controlValue);
 }
 
 ControlsIndv::ControlsIndv(const libcamera::ControlId *control,
@@ -61,6 +72,8 @@ QWidget *ControlsIndv::controlItemHLayout_()
 			qCheckBox_->setCheckState(Qt::Checked);
 		else
 			qCheckBox_->setCheckState(Qt::Unchecked);
+		connect(qCheckBox_,&QCheckBox::stateChanged,
+			this,&ControlsIndv::controlChange);
 		return qCheckBox_;
 
 	case ControlTypeFloat: {
@@ -89,13 +102,29 @@ QWidget *ControlsIndv::controlItemHLayout_()
 	}
 }
 
+QLayout *ControlsIndv::controlNameLayout_()
+{
+	QVBoxLayout *nameLayout = new QVBoxLayout();
+
+	currValueLabel_ = new QLabel();
+
+	nameLayout->addWidget(new QLabel(QString::fromStdString(control_->name())));
+	nameLayout->addWidget(currValueLabel_);
+
+	return nameLayout;
+}
+
 void ControlsIndv::controlChange()
 {
 	ControlValue controlVal = ControlValue();
 
 	switch (control_->type()) {
 	case ControlTypeBool:
-		controlVal.set<bool>(qCheckBox_->checkState());
+		qInfo()<<"Changing bool value";
+		if(qCheckBox_->checkState() == Qt::CheckState::Checked)
+			controlVal.set<bool>(true);
+		else
+			controlVal.set<bool>(false);
 		break;
 
 	case ControlTypeFloat:
@@ -110,4 +139,27 @@ void ControlsIndv::controlChange()
 	}
 
 	Q_EMIT indvCntrlChanged(control_, controlVal);
+}
+
+void ControlsIndv::updateValue(const libcamera::ControlValue controlValue)
+{
+	switch (control_->type()) {
+	case ControlTypeBool:
+		if (controlValue.get<bool>())
+			currValueLabel_->setText("True");
+		else
+			currValueLabel_->setText("False");
+		break;
+
+	case ControlTypeFloat:
+		currValueLabel_->setText(QString::number(controlValue.get<float>()));
+		break;
+
+	case ControlTypeInteger32:
+		currValueLabel_->setText(QString::number(controlValue.get<int32_t>()));
+		break;
+
+	default:
+		return;
+	}
 }

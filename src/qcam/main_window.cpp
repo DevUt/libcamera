@@ -361,6 +361,8 @@ void MainWindow::openSettingsWin()
 
 	connect(settingWin_.get(), &SettingsWindow::controlsChanged,
 		this, &MainWindow::controlLatch);
+
+	connect(this,&MainWindow::currentControlValue,settingWin_.get(),&SettingsWindow::controlUpdate);
 }
 
 /* -----------------------------------------------------------------------------
@@ -827,6 +829,8 @@ void MainWindow::processCapture()
 
 		request = doneQueue_.dequeue();
 	}
+
+	Q_EMIT currentControlValue(request->controls());
 
 	/* Process buffers. */
 	if (request->buffers().count(vfStream_))
