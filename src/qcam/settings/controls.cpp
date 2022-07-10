@@ -11,6 +11,7 @@
 
 #include <libcamera/camera.h>
 
+#include <QFrame>
 #include <QGridLayout>
 #include <QLabel>
 #include <QSlider>
@@ -21,11 +22,15 @@
 #include "float_slider.h"
 
 ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_, QWidget *parent)
-	: QWidget(parent)
+	: QScrollArea(parent)
 {
 	// TODO: Fix using rebase  parent of formlayout
-	QGridLayout *controlGLayout = new QGridLayout(this);
 
+	setWidgetResizable(true);
+
+	QWidget *mainContainerWidget = new QWidget();
+	QVBoxLayout *controlVLayout = new QVBoxLayout(mainContainerWidget);
+	// controlVLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
 	controlList_ = std::make_shared<ControlList>();
 
 	int controlcount = 0;
@@ -33,16 +38,14 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_, QWidget *pa
 		ControlsIndv *controlItem = new ControlsIndv(control, info);
 		controlsMap_[control->id()] = controlItem;
 
-		controlGLayout->addLayout(controlItem->controlNameLayout_(),controlcount,0);
-		controlGLayout->addWidget(controlItem->controlItemHLayout_(),controlcount,1);
-
-		controlItem->updateValue(info.def());
+		controlItem->setDefaultValue();
+		controlVLayout->addWidget(controlItem->controlFrame());
 		controlcount++;
 
 		connect(controlItem, &ControlsIndv::indvCntrlChanged,
 			this, &ControlsTab::changeCntrlList);
 	}
-
+	setWidget(mainContainerWidget);
 }
 
 void ControlsTab::changeCntrlList(const libcamera::ControlId *control,
@@ -62,20 +65,39 @@ ControlsIndv::ControlsIndv(const libcamera::ControlId *control,
 			   const libcamera::ControlInfo info)
 	: control_(control), info_(info){};
 
+QFrame *ControlsIndv::controlFrame()
+{
+	QFrame *mainControlFrame = new QFrame(this);
+	QVBoxLayout *frameVLayout = new QVBoxLayout(this);
+	frameVLayout->addLayout(controlNameLayout_());
+	frameVLayout->addWidget(controlItemHLayout_());
+	mainControlFrame->setFrameShape(QFrame::StyledPanel);
+	mainControlFrame->setLayout(frameVLayout);
+	return mainControlFrame;
+}
+
 QWidget *ControlsIndv::controlItemHLayout_()
 {
 	switch (control_->type()) {
-	case ControlTypeBool:
+	case ControlTypeBool: {
 		qCheckBox_ = new QCheckBox(this);
 		qCheckBox_->setTristate(false);
 		if (info_.def().get<bool>())
 			qCheckBox_->setCheckState(Qt::Checked);
 		else
 			qCheckBox_->setCheckState(Qt::Unchecked);
-		connect(qCheckBox_,&QCheckBox::stateChanged,
-			this,&ControlsIndv::controlChange);
-		return qCheckBox_;
+		connect(qCheckBox_, &QCheckBox::stateChanged,
+			this, &ControlsIndv::controlChange);
 
+		QWidget *hideWidget = new QWidget(this);
+		QHBoxLayout *boolControlLabel = new QHBoxLayout();
+		boolControlLabel->setAlignment(Qt::AlignLeft);
+		boolControlLabel->setMargin(0);
+		boolControlLabel->addWidget(new QLabel("Enabled: "));
+		boolControlLabel->addWidget(qCheckBox_);
+		hideWidget->setLayout(boolControlLabel);
+		return hideWidget;
+	}
 	case ControlTypeFloat: {
 		fSlider_ = new FloatSlider(this);
 		fSlider_->setOrientation(Qt::Horizontal);
@@ -108,8 +130,21 @@ QLayout *ControlsIndv::controlNameLayout_()
 
 	currValueLabel_ = new QLabel();
 
+
 	nameLayout->addWidget(new QLabel(QString::fromStdString(control_->name())));
-	nameLayout->addWidget(currValueLabel_);
+
+	QHBoxLayout *currentValueLayout = new QHBoxLayout();
+	currentValueLayout->setAlignment(Qt::AlignLeft);
+	currentValueLayout->addWidget(new QLabel(QString("Current Value: ")));
+	currentValueLayout->addWidget(currValueLabel_);
+
+	QHBoxLayout *defaultValueLayout = new QHBoxLayout();
+	defaultValueLayout->setAlignment(Qt::AlignLeft);
+	defaultValueLayout->addWidget(new QLabel(QString("Default Value: ")));
+	defaultValueLayout->addWidget(defaultValueLabel_);
+
+	nameLayout->addLayout(defaultValueLayout);
+	nameLayout->addLayout(currentValueLayout);
 
 	return nameLayout;
 }
@@ -120,8 +155,7 @@ void ControlsIndv::controlChange()
 
 	switch (control_->type()) {
 	case ControlTypeBool:
-		qInfo()<<"Changing bool value";
-		if(qCheckBox_->checkState() == Qt::CheckState::Checked)
+		if (qCheckBox_->checkState() == Qt::CheckState::Checked)
 			controlVal.set<bool>(true);
 		else
 			controlVal.set<bool>(false);
@@ -161,5 +195,29 @@ void ControlsIndv::updateValue(const libcamera::ControlValue controlValue)
 
 	default:
 		return;
+	}
+}
+
+void ControlsIndv::setDefaultValue()
+{
+	defaultValueLabel_ = new QLabel();
+	switch (control_->type()) {
+	case ControlTypeBool:
+		if (info_.def().get<bool>())
+			defaultValueLabel_->setText("True");
+		else
+			defaultValueLabel_->setText("False");
+		break;
+
+	case ControlTypeFloat:
+		defaultValueLabel_->setText(QString::number(info_.def().get<float>()));
+		break;
+
+	case ControlTypeInteger32:
+		defaultValueLabel_->setText(QString::number(info_.def().get<int32_t>()));
+		break;
+
+	default:
+		break;
 	}
 }

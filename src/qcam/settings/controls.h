@@ -16,6 +16,7 @@
 #include <QCheckBox>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QScrollArea>
 
 #include "float_slider.h"
 
@@ -23,7 +24,7 @@ using namespace libcamera;
 
 class ControlsIndv;
 
-class ControlsTab : public QWidget
+class ControlsTab : public QScrollArea
 {
 	Q_OBJECT
 
@@ -53,10 +54,12 @@ public:
 	ControlsIndv(const libcamera::ControlId *control, const libcamera::ControlInfo info);
 	~ControlsIndv(){};
 
+	QFrame *controlFrame();
 	QLayout *controlNameLayout_();
 	QWidget *controlItemHLayout_();
 
 	void updateValue(const libcamera::ControlValue controlValue);
+	void setDefaultValue();
 
 private:
 	const libcamera::ControlId *control_;
@@ -65,6 +68,7 @@ private:
 	FloatSlider *fSlider_;
 	QCheckBox *qCheckBox_;
 	QLabel *currValueLabel_;
+	QLabel *defaultValueLabel_;
 	Slider *iSlider_;
 
 private Q_SLOTS:
