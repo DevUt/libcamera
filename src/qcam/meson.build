@@ -24,12 +24,17 @@ qcam_sources = files([
     'main.cpp',
     'main_window.cpp',
     'message_handler.cpp',
+    'settings/control_frame.cpp',
+    'settings/controls_tab.cpp',
     'viewfinder_qt.cpp',
 ])
 
 qcam_moc_headers = files([
     'cam_select_dialog.h',
     'main_window.h',
+    'settings/control_frame.h',
+    'settings/controls_tab.h',
+    'settings/settings_dialog.h',
     'viewfinder_qt.h',
 ])
 

@@ -239,6 +239,12 @@ int MainWindow::createToolbars()
 	saveRaw_ = action;
 #endif
 
+	/* Settings Dialog open action */
+	action = toolbar_->addAction(QIcon::fromTheme("preferences-system",
+						      QIcon(":settings.svg")),
+				     "Open Settings Window");
+	connect(action, &QAction::triggered, this, &MainWindow::openSettingsDialog);
+
 	return 0;
 }
 
@@ -260,6 +266,17 @@ void MainWindow::updateTitle()
 	previousFrames_ = framesCaptured_;
 
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
+}
+
+void MainWindow::openSettingsDialog()
+{
+	if (settingsDialog_) {
+		settingsDialog_->show();
+		return;
+	}
+
+	settingsDialog_ = new SettingsDialog(camera_, this);
+	settingsDialog_->show();
 }
 
 /* -----------------------------------------------------------------------------

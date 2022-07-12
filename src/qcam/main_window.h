@@ -23,12 +23,14 @@
 #include <QMainWindow>
 #include <QMutex>
 #include <QObject>
+#include <QPointer>
 #include <QPushButton>
 #include <QQueue>
 #include <QTimer>
 
 #include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
+#include "settings/settings_dialog.h"
 
 #include "cam_select_dialog.h"
 #include "viewfinder.h"
@@ -94,6 +96,8 @@ private:
 	void loadCaptureScript();
 	void stopCaptureScript();
 
+	void openSettingsDialog();
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
@@ -108,6 +112,7 @@ private:
 	QTimer titleTimer_;
 
 	CameraSelectorDialog *cameraSelectorDialog_;
+	QPointer<SettingsDialog> settingsDialog_;
 
 	/* Options */
 	const OptionsParser::Options &options_;
