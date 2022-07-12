@@ -9,6 +9,7 @@
 
 #include <libcamera/controls.h>
 
+#include <QLabel>
 #include <QFrame>
 #include <QWidget>
 
@@ -18,9 +19,17 @@ class ControlFrame : public QFrame
 
 public:
 	ControlFrame(const libcamera::ControlId *control,
+		     const libcamera::ControlInfo &controlInfo,
 		     QWidget *parent);
 	~ControlFrame() = default;
 
 private:
 	const libcamera::ControlId *control_;
+	const libcamera::ControlInfo &controlInfo_;
+
+	/* Widgets */
+	QLabel *defaultValueLabel(QWidget *parent = nullptr);
+
+	/* Helper Hunctions */
+	QString getDefaultValueQStr();
 };
