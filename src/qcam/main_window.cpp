@@ -255,6 +255,10 @@ int MainWindow::createToolbars()
 	/* Do not operate directly call toggleScriptAction */
 	scriptExecAction_ = action;
 
+	/* Settings Dialog open action */
+	action = toolbar_->addAction(QIcon(":settings.svg"), "Open Settings Window");
+	connect(action, &QAction::triggered, this, &MainWindow::openSettingsDialog);
+
 	return 0;
 }
 
@@ -339,6 +343,17 @@ void MainWindow::toggleScriptAction(bool showAvailable)
 		scriptExecAction_->setIcon(QIcon(":x-square.svg"));
 		scriptExecAction_->setText("Stop Script execution");
 	}
+}
+
+void MainWindow::openSettingsDialog()
+{
+	if (settingsDialog_) {
+		settingsDialog_->show();
+		return;
+	}
+
+	settingsDialog_ = std::make_unique<SettingsDialog>(camera_, this);
+	settingsDialog_->show();
 }
 
 /* -----------------------------------------------------------------------------

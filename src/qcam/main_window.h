@@ -28,6 +28,7 @@
 
 #include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
+#include "settings/settings_dialog.h"
 #include "viewfinder.h"
 
 class QAction;
@@ -89,6 +90,7 @@ private:
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
 	void chooseScript();
+	void openSettingsDialog();
 
 	void toggleScriptAction(bool showAvailable);
 
@@ -105,6 +107,8 @@ private:
 
 	QString title_;
 	QTimer titleTimer_;
+
+	std::unique_ptr<SettingsDialog> settingsDialog_;
 
 	/* Options */
 	const OptionsParser::Options &options_;
