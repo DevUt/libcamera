@@ -26,7 +26,7 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 
 	int controlCount = 0;
 	for (auto &[control, info] : camera_->controls()) {
-		ControlFrame *controlFrame = new ControlFrame(control, this);
+		ControlFrame *controlFrame = new ControlFrame(control, info, this);
 
 		controlGLayout->addWidget(controlFrame, controlCount / 2,
 					  controlCount % 2);
