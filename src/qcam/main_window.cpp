@@ -98,7 +98,7 @@ private:
 
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	: saveRaw_(nullptr), options_(options), cm_(cm), allocator_(nullptr),
-	  isCapturing_(false), captureRaw_(false)
+	  isCapturing_(false), captureRaw_(false), controlList_(ControlList())
 {
 	int ret;
 
@@ -353,6 +353,8 @@ void MainWindow::openSettingsDialog()
 	}
 
 	settingsDialog_ = std::make_unique<SettingsDialog>(camera_, this);
+	connect(settingsDialog_.get(), &SettingsDialog::controlListChanged,
+		this, &MainWindow::controlListLatch);
 	settingsDialog_->show();
 }
 
@@ -891,10 +893,40 @@ void MainWindow::renderComplete(FrameBuffer *buffer)
 
 int MainWindow::queueRequest(Request *request)
 {
-	if (script_)
-		request->controls() = script_->frameControls(queueCount_);
+	/*
+	 * Call the controlListLatch with a nullptr to indicate that it
+	 * has been called by us and not by the signal.
+	 */
+
+	controlListLatch(nullptr);
+	request->controls() = controlList_;
+
+	/* Clear controlList_ to remove old controls that have been set.*/
+	if (controlList_.size())
+		controlList_.clear();
 
 	queueCount_++;
 
 	return camera_->queueRequest(request);
+}
+
+void MainWindow::controlListLatch(std::shared_ptr<const libcamera::ControlList> controlList)
+{
+	/*
+	 * If we have been given a non-null shared_ptr then it means we
+	 * have been alerted by the SettingsWindow::controlListChanged signal.
+	 */
+
+	if (controlList) {
+		controlList_ = *(controlList);
+
+		/* Shut down the capture script */
+		if (script_)
+			toggleScriptAction(true);
+
+		return;
+	}
+
+	if (script_)
+		controlList_ = script_->frameControls(queueCount_);
 }

@@ -17,9 +17,11 @@
 
 #include "control_frame.h"
 
+using namespace libcamera;
+
 ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 			 QWidget *parent)
-	: QWidget(parent)
+	: QWidget(parent), controlList_(std::make_shared<ControlList>())
 {
 	/* Main Layout for the tab */
 	QGridLayout *controlGLayout = new QGridLayout(this);
@@ -27,6 +29,8 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 	int controlCount = 0;
 	for (auto &[control, info] : camera_->controls()) {
 		ControlFrame *controlFrame = new ControlFrame(control, info, this);
+		connect(controlFrame, &ControlFrame::controlChanged,
+			this, &ControlsTab::controlChanged);
 
 		controlGLayout->addWidget(controlFrame, controlCount / 2,
 					  controlCount % 2);
@@ -35,4 +39,17 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 
 	if (controlCount == 0)
 		controlGLayout->addWidget(new QLabel("No controls available"));
+}
+
+/* -----------------------------------------------------------------------------
+ * Qt Slots
+ */
+
+void ControlsTab::controlChanged(const libcamera::ControlId *controlId,
+				 const libcamera::ControlValue controlValue)
+{
+	controlList_->clear();
+
+	controlList_->set(controlId->id(), controlValue);
+	Q_EMIT controlListChanged(controlList_);
 }

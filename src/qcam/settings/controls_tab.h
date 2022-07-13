@@ -21,4 +21,14 @@ class ControlsTab : public QWidget
 public:
 	ControlsTab(std::shared_ptr<libcamera::Camera> camera_, QWidget *parent);
 	~ControlsTab() = default;
+
+Q_SIGNALS:
+	void controlListChanged(const std::shared_ptr<const libcamera::ControlList>);
+
+public Q_SLOTS:
+	void controlChanged(const libcamera::ControlId *controlId,
+			    const libcamera::ControlValue controlValue);
+
+private:
+	std::shared_ptr<libcamera::ControlList> controlList_;
 };

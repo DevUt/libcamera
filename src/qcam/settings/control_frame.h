@@ -9,8 +9,9 @@
 
 #include <libcamera/controls.h>
 
-#include <QLabel>
+#include <QCheckBox>
 #include <QFrame>
+#include <QLabel>
 #include <QWidget>
 
 class ControlFrame : public QFrame
@@ -23,12 +24,22 @@ public:
 		     QWidget *parent);
 	~ControlFrame() = default;
 
+Q_SIGNALS:
+	void controlChanged(const libcamera::ControlId *controlId,
+			    const libcamera::ControlValue);
+
+private Q_SLOTS:
+	void notifyControlChange();
+
 private:
 	const libcamera::ControlId *control_;
 	const libcamera::ControlInfo &controlInfo_;
 
 	/* Widgets */
+	QWidget *controlInteraction(QWidget *parent = nullptr);
 	QLabel *defaultValueLabel(QWidget *parent = nullptr);
+
+	QCheckBox *controlCheckBox_;
 
 	/* Helper Hunctions */
 	QString getDefaultValueQStr();
