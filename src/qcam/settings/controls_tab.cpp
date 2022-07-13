@@ -13,6 +13,7 @@
 
 #include <QGridLayout>
 #include <QLabel>
+#include <QScrollArea>
 #include <QWidget>
 
 #include "control_frame.h"
@@ -21,10 +22,11 @@ using namespace libcamera;
 
 ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 			 QWidget *parent)
-	: QWidget(parent), controlList_(std::make_shared<ControlList>())
+	: QScrollArea(parent), controlList_(std::make_shared<ControlList>())
 {
+	QWidget *containerWidget = new QWidget(this);
 	/* Main Layout for the tab */
-	QGridLayout *controlGLayout = new QGridLayout(this);
+	QGridLayout *controlGLayout = new QGridLayout(containerWidget);
 
 	int controlCount = 0;
 	for (auto &[control, info] : camera_->controls()) {
@@ -39,6 +41,9 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 
 	if (controlCount == 0)
 		controlGLayout->addWidget(new QLabel("No controls available"));
+
+	/* Set widget and policies for the scrollarea */
+	setWidget(containerWidget);
 }
 
 /* -----------------------------------------------------------------------------
