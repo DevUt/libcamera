@@ -32,8 +32,13 @@ public:
 
 		ControlsTab *controlsTab = new ControlsTab(camera, this);
 		settingTabWidget->addTab(controlsTab, "Controls");
+		connect(controlsTab, &ControlsTab::controlListChanged,
+			this, &SettingsDialog::controlListChanged);
 
 		setWindowTitle("Settings");
 	}
 	~SettingsDialog() = default;
+
+Q_SIGNALS:
+	void controlListChanged(std::shared_ptr<const libcamera::ControlList>);
 };
