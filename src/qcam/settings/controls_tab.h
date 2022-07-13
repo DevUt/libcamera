@@ -11,10 +11,11 @@
 
 #include <libcamera/camera.h>
 
+#include <QScrollArea>
 #include <QVBoxLayout>
 #include <QWidget>
 
-class ControlsTab : public QWidget
+class ControlsTab : public QScrollArea
 {
 	Q_OBJECT
 
