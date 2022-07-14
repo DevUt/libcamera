@@ -45,6 +45,7 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 
 	/* Set widget and policies for the scrollarea */
 	setWidget(containerWidget);
+	setWidgetResizable(true);
 }
 
 /* -----------------------------------------------------------------------------
