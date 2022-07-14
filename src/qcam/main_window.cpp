@@ -355,6 +355,8 @@ void MainWindow::openSettingsDialog()
 	settingsDialog_ = std::make_unique<SettingsDialog>(camera_, this);
 	connect(settingsDialog_.get(), &SettingsDialog::controlListChanged,
 		this, &MainWindow::controlListLatch);
+	connect(this, &MainWindow::processControls,
+		settingsDialog_.get(), &SettingsDialog::processControls);
 	settingsDialog_->show();
 }
 
@@ -821,6 +823,14 @@ void MainWindow::processCapture()
 			return;
 
 		request = doneQueue_.dequeue();
+	}
+
+	/* Process controlList for current values. */
+	if (settingsDialog_) {
+		if (settingsDialog_->isVisible()) {
+			controlListShared_ = std::make_shared<const libcamera::ControlList>(request->controls());
+			Q_EMIT processControls(controlListShared_);
+		}
 	}
 
 	/* Process buffers. */

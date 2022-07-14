@@ -57,6 +57,9 @@ public:
 
 	bool event(QEvent *e) override;
 
+Q_SIGNALS:
+	void processControls(std::shared_ptr<const libcamera::ControlList>);
+
 private Q_SLOTS:
 	void quit();
 	void updateTitle();
@@ -143,4 +146,5 @@ private:
 	std::unique_ptr<CaptureScript> script_;
 
 	libcamera::ControlList controlList_;
+	std::shared_ptr<const libcamera::ControlList> controlListShared_;
 };

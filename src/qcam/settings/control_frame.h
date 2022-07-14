@@ -12,6 +12,7 @@
 #include <QCheckBox>
 #include <QFrame>
 #include <QLabel>
+#include <QString>
 #include <QWidget>
 
 class ControlFrame : public QFrame
@@ -24,6 +25,7 @@ public:
 		     QWidget *parent);
 	~ControlFrame() = default;
 
+	void setCurrentValue(const libcamera::ControlValue controlValue);
 Q_SIGNALS:
 	void controlChanged(const libcamera::ControlId *controlId,
 			    const libcamera::ControlValue);
@@ -37,9 +39,11 @@ private:
 
 	/* Widgets */
 	QWidget *controlInteraction(QWidget *parent = nullptr);
+	QWidget *currentValueLabel(QWidget *parent = nullptr);
 	QLabel *defaultValueLabel(QWidget *parent = nullptr);
 
 	QCheckBox *controlCheckBox_;
+	QLabel *currentValue_;
 
 	/* Helper Hunctions */
 	QString getDefaultValueQStr();
