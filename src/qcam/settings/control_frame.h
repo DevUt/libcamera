@@ -47,6 +47,7 @@ private:
 	QCheckBox *controlCheckBox_;
 	QLabel *currentValue_;
 	FloatSlider *floatSlider_;
+	Slider *intSlider_;
 
 	/* Helper Hunctions */
 	QString getDefaultValueQStr();

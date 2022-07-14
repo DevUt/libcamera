@@ -94,6 +94,19 @@ QWidget *ControlFrame::controlInteraction(QWidget *parent)
 		SliderLayout *fSliderLayout = new SliderLayout(floatSlider_, this);
 		return fSliderLayout;
 	}
+	case ControlTypeInteger32: {
+		intSlider_ = new Slider(this);
+		intSlider_->setRange(controlInfo_.min().get<int32_t>(),
+				     controlInfo_.max().get<int32_t>());
+		intSlider_->setValue(controlInfo_.def().get<int32_t>());
+		intSlider_->setOrientation(Qt::Orientation::Horizontal);
+
+		connect(intSlider_, &Slider::valueChanged,
+			this, &ControlFrame::notifyControlChange);
+
+		SliderLayout *iSliderLayout = new SliderLayout(intSlider_, this);
+		return iSliderLayout;
+	}
 	default:
 		return (new QLabel("Currently Unavailable"));
 	}
@@ -162,6 +175,9 @@ void ControlFrame::notifyControlChange()
 		break;
 	case ControlTypeFloat:
 		controlValue.set<float>(floatSlider_->value());
+		break;
+	case ControlTypeInteger32:
+		controlValue.set<int32_t>(intSlider_->value());
 		break;
 	default:
 		/* Nothing to emit so return */
