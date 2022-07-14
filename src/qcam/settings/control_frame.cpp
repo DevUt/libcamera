@@ -16,6 +16,8 @@
 #include <QString>
 #include <QVBoxLayout>
 
+#include "slider.h"
+
 using namespace libcamera;
 
 ControlFrame::ControlFrame(const ControlId *control,
@@ -78,6 +80,19 @@ QWidget *ControlFrame::controlInteraction(QWidget *parent)
 		HCheckBoxLayout->setMargin(0);
 		return containerWidget;
 	}
+	case ControlTypeFloat: {
+		floatSlider_ = new FloatSlider;
+		floatSlider_->setRange(controlInfo_.min().get<float>(),
+				       controlInfo_.max().get<float>());
+		floatSlider_->setValue(controlInfo_.def().get<float>());
+		floatSlider_->setOrientation(Qt::Orientation::Horizontal);
+
+		connect(floatSlider_, &FloatSlider::valueChanged,
+			this, &ControlFrame::notifyControlChange);
+
+		SliderLayout *fSliderLayout = new SliderLayout(floatSlider_, this);
+		return fSliderLayout;
+	}
 	default:
 		return (new QLabel("Currently Unavailable"));
 	}
@@ -113,6 +128,9 @@ void ControlFrame::setCurrentValue(const libcamera::ControlValue controlValue)
 		else
 			currentValue_->setText("False");
 		break;
+	case ControlTypeFloat:
+		currentValue_->setText(QString::number(controlValue.get<float>()));
+		break;
 	default:
 		break;
 	}
@@ -140,6 +158,9 @@ void ControlFrame::notifyControlChange()
 		else
 			controlValue.set<bool>(false);
 
+		break;
+	case ControlTypeFloat:
+		controlValue.set<float>(floatSlider_->value());
 		break;
 	default:
 		/* Nothing to emit so return */
