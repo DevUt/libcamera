@@ -34,6 +34,8 @@ public:
 		settingTabWidget->addTab(controlsTab, "Controls");
 		connect(controlsTab, &ControlsTab::controlListChanged,
 			this, &SettingsDialog::controlListChanged);
+		connect(this, &SettingsDialog::processControls,
+			controlsTab, &ControlsTab::notifyControlFrame);
 
 		setWindowTitle("Settings");
 	}
@@ -41,4 +43,5 @@ public:
 
 Q_SIGNALS:
 	void controlListChanged(std::shared_ptr<const libcamera::ControlList>);
+	void processControls(std::shared_ptr<const libcamera::ControlList>);
 };

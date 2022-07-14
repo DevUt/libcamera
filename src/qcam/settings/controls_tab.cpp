@@ -31,6 +31,7 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 	int controlCount = 0;
 	for (auto &[control, info] : camera_->controls()) {
 		ControlFrame *controlFrame = new ControlFrame(control, info, this);
+		controlFrameMap_[control->id()] = controlFrame;
 		connect(controlFrame, &ControlFrame::controlChanged,
 			this, &ControlsTab::controlChanged);
 
@@ -49,6 +50,12 @@ ControlsTab::ControlsTab(std::shared_ptr<libcamera::Camera> camera_,
 /* -----------------------------------------------------------------------------
  * Qt Slots
  */
+
+void ControlsTab::notifyControlFrame(std::shared_ptr<const libcamera::ControlList> controlList)
+{
+	for (auto &[id, controlValue] : *(controlList))
+		controlFrameMap_[id]->setCurrentValue(controlValue);
+}
 
 void ControlsTab::controlChanged(const libcamera::ControlId *controlId,
 				 const libcamera::ControlValue controlValue)

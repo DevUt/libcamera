@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 
 #include <libcamera/camera.h>
@@ -14,6 +15,8 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QWidget>
+
+#include "control_frame.h"
 
 class ControlsTab : public QScrollArea
 {
@@ -29,7 +32,9 @@ Q_SIGNALS:
 public Q_SLOTS:
 	void controlChanged(const libcamera::ControlId *controlId,
 			    const libcamera::ControlValue controlValue);
+	void notifyControlFrame(std::shared_ptr<const libcamera::ControlList> controlList);
 
 private:
 	std::shared_ptr<libcamera::ControlList> controlList_;
+	std::map<const unsigned int, ControlFrame *> controlFrameMap_;
 };

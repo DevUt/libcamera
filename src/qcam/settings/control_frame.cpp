@@ -32,6 +32,7 @@ ControlFrame::ControlFrame(const ControlId *control,
 	 * ownership to its parent widget.
 	 */
 	frameVLayout->addWidget(defaultValueLabel());
+	frameVLayout->addWidget(currentValueLabel());
 	frameVLayout->addWidget(controlInteraction());
 
 	setFrameStyle(QFrame::StyledPanel);
@@ -82,9 +83,40 @@ QWidget *ControlFrame::controlInteraction(QWidget *parent)
 	}
 }
 
+QWidget *ControlFrame::currentValueLabel(QWidget *parent)
+{
+	QWidget *containerWidget = new QWidget(parent);
+
+	QHBoxLayout *HCurrentValueLayout = new QHBoxLayout(containerWidget);
+
+	currentValue_ = new QLabel;
+
+	HCurrentValueLayout->addWidget(new QLabel("Current Value: "));
+	HCurrentValueLayout->addWidget(currentValue_);
+
+	/* Align with ControlName. */
+	HCurrentValueLayout->setAlignment(Qt::AlignLeft);
+	HCurrentValueLayout->setMargin(0);
+
+	return containerWidget;
+}
 /* -----------------------------------------------------------------------------
  * Qt Slots
  */
+
+void ControlFrame::setCurrentValue(const libcamera::ControlValue controlValue)
+{
+	switch (control_->type()) {
+	case ControlTypeBool:
+		if (controlValue.get<bool>())
+			currentValue_->setText("True");
+		else
+			currentValue_->setText("False");
+		break;
+	default:
+		break;
+	}
+}
 
 void ControlFrame::notifyControlChange()
 {
