@@ -15,6 +15,8 @@
 #include <QString>
 #include <QWidget>
 
+#include "slider.h"
+
 class ControlFrame : public QFrame
 {
 	Q_OBJECT
@@ -44,6 +46,7 @@ private:
 
 	QCheckBox *controlCheckBox_;
 	QLabel *currentValue_;
+	FloatSlider *floatSlider_;
 
 	/* Helper Hunctions */
 	QString getDefaultValueQStr();
