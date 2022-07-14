@@ -145,6 +145,12 @@ void ControlFrame::setCurrentValue(const libcamera::ControlValue controlValue)
 	case ControlTypeFloat:
 		currentValue_->setText(QString::number(controlValue.get<float>()));
 		break;
+	case ControlTypeInteger32:
+		currentValue_->setText(QString::number(controlValue.get<int32_t>()));
+		break;
+	case ControlTypeInteger64:
+		currentValue_->setText(QString::number(controlValue.get<int64_t>()));
+		break;
 	default:
 		break;
 	}
