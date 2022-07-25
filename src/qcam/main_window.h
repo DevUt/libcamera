@@ -86,6 +86,10 @@ private:
 	void processHotplug(HotplugEvent *e);
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
+	QString getCameraLocation(std::shared_ptr<libcamera::Camera> camera);
+	QString getCameraModel(std::shared_ptr<libcamera::Camera> camera);
+
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;

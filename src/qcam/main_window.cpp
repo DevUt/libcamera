@@ -12,15 +12,20 @@
 #include <string>
 
 #include <libcamera/camera_manager.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/version.h>
 
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
 #include <QMutexLocker>
+#include <QLabel>
 #include <QStandardPaths>
 #include <QStringList>
 #include <QTimer>
@@ -288,26 +293,79 @@ void MainWindow::switchCamera(int index)
 	startStopAction_->setChecked(true);
 }
 
+QString MainWindow::getCameraLocation(std::shared_ptr<libcamera::Camera> camera)
+{
+	const ControlList &props = camera->properties();
+
+	const auto &location = props.get(properties::Location);
+	if (location) {
+		switch (*location) {
+		case properties::CameraLocationFront:
+			return "Internal front camera ";
+		case properties::CameraLocationBack:
+			return "Internal back camera ";
+		case properties::CameraLocationExternal:
+			return "External camera ";
+		}
+	}
+	return QString();
+}
+
+QString MainWindow::getCameraModel(std::shared_ptr<libcamera::Camera> camera)
+{
+	const ControlList &props = camera->properties();
+	const auto &model = props.get(properties::Model);
+
+	return QString::fromStdString(*model);
+}
+
 std::string MainWindow::chooseCamera()
 {
 	QStringList cameras;
-	bool result;
+	std::string result;
 
 	/* If only one camera is available, use it automatically. */
-	if (cm_->cameras().size() == 1)
-		return cm_->cameras()[0]->id();
+	// if (cm_->cameras().size() == 1)
+	// 	return cm_->cameras()[0]->id();
 
 	/* Present a dialog box to pick a camera. */
+	QDialog *cameraSelectDialog = new QDialog(this);
+	QFormLayout *cameraSelectFormLayout = new QFormLayout(cameraSelectDialog);
+	QComboBox *cameraIdList = new QComboBox;
+	QDialogButtonBox *buttonBox = new QDialogButtonBox;
+
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
 		cameras.append(QString::fromStdString(cam->id()));
+	cameraIdList->addItems(cameras);
 
-	QString id = QInputDialog::getItem(this, "Select Camera",
-					   "Camera:", cameras, 0,
-					   false, &result);
-	if (!result)
-		return std::string();
+	QLabel *cameraLocationLabel = new QLabel(getCameraLocation(cm_->get(cameras[0].toStdString())));
+	QLabel *cameraModelLabel = new QLabel(getCameraModel(cm_->get(cameras[0].toStdString())));
 
-	return id.toStdString();
+	connect(cameraIdList,&QComboBox::currentTextChanged,this,[&](QString cameraId){
+		cameraLocationLabel->setText(getCameraLocation(cm_->get(cameraId.toStdString())));
+		cameraModelLabel->setText(getCameraModel(cm_->get(cameraId.toStdString())));
+	});
+
+	buttonBox->addButton(QDialogButtonBox::Cancel);
+	buttonBox->addButton(QDialogButtonBox::Ok);
+
+	connect(buttonBox,&QDialogButtonBox::accepted, this, [&](){
+		result = cameraIdList->currentText().toStdString();
+		cameraSelectDialog->accept();
+	});
+
+	connect(buttonBox,&QDialogButtonBox::rejected, this, [&](){
+		result = QString().toStdString();
+		cameraSelectDialog->reject();
+	});
+
+	cameraSelectFormLayout->addRow("Camera: ", cameraIdList);
+	cameraSelectFormLayout->addRow("Location: ", cameraLocationLabel);
+	cameraSelectFormLayout->addRow("Model: ", cameraModelLabel);
+	cameraSelectFormLayout->addWidget(buttonBox);
+
+	cameraSelectDialog->exec();
+	return result;
 }
 
 int MainWindow::openCamera()
