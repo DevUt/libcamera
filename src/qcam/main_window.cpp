@@ -147,6 +147,9 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	cm_->cameraAdded.connect(this, &MainWindow::addCamera);
 	cm_->cameraRemoved.connect(this, &MainWindow::removeCamera);
 
+	if (options_.isSet(OptCaptureScript))
+		scriptPath_ = options_[OptCaptureScript].toString();
+
 	/* Open the camera and start capture. */
 	ret = openCamera();
 	if (ret < 0) {
@@ -324,6 +327,13 @@ void MainWindow::loadCaptureScript()
 
 		QMessageBox::critical(this, "Invalid Script",
 				      "Couldn't load the capture script");
+
+		/*
+		 * Close the camera if started by command line and its the first capture
+		 * script.
+		 */
+		if (firstCameraSelect_ && options_.isSet(OptCaptureScript))
+			quit();
 
 	} else
 		cameraSelectorDialog_->informScriptRunning(scriptPath_);
