@@ -30,6 +30,7 @@
 #include <QStringList>
 #include <QTimer>
 
+#include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
 
 #include "viewfinder.h"
@@ -95,10 +96,14 @@ private:
 	QString getCameraModel(const std::shared_ptr<libcamera::Camera> &camera);
 	void updateCameraInfo(const std::shared_ptr<libcamera::Camera> &camera);
 
+	std::string captureScriptPath_;
+	void handleScriptButton();
+	void execCaptureScript();
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
-	QPushButton *cameraSelectButton_;
+	QPointer<QPushButton> cameraSelectButton_;
 	QAction *saveRaw_;
 	ViewFinder *viewfinder_;
 
@@ -111,6 +116,8 @@ private:
 	QPointer<QComboBox> cameraIdComboBox_;
 	QLabel *cameraLocation_;
 	QLabel *cameraModel_;
+
+	QPointer<QPushButton> captureScriptButton_;
 
 	/* Options */
 	const OptionsParser::Options &options_;
@@ -137,6 +144,8 @@ private:
 	QElapsedTimer frameRateInterval_;
 	uint32_t previousFrames_;
 	uint32_t framesCaptured_;
+	uint32_t queueCount_;
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
+	std::unique_ptr<CaptureScript> script_;
 };

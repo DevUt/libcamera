@@ -25,6 +25,7 @@
 #include <QImageWriter>
 #include <QInputDialog>
 #include <QLabel>
+#include <QMessageBox>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -157,6 +158,9 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	}
 
 	startStopAction_->setChecked(true);
+
+	/* Start executing CaptureScript. */
+	execCaptureScript();
 }
 
 MainWindow::~MainWindow()
@@ -198,7 +202,9 @@ int MainWindow::createToolbars()
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selector. */
-	cameraSelectButton_ = new QPushButton;
+	if (!cameraSelectButton_)
+		cameraSelectButton_ = new QPushButton;
+
 	connect(cameraSelectButton_, &QPushButton::clicked,
 		this, &MainWindow::switchCamera);
 
@@ -256,6 +262,65 @@ void MainWindow::updateTitle()
 	previousFrames_ = framesCaptured_;
 
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
+}
+
+void MainWindow::execCaptureScript()
+{
+	/* If camera or capture script not selected, return.*/
+	if (camera_ == nullptr || captureScriptPath_.empty())
+		return;
+
+	/*
+	 * If we are already capturing, stop so we don't have stuck image
+	 * in viewfinder.
+	 */
+	if (isCapturing_)
+		toggleCapture(false);
+
+	script_ = std::make_unique<CaptureScript>(camera_, captureScriptPath_);
+	if (!script_->valid()) {
+		script_.reset();
+
+		captureScriptButton_->setText("Stopped");
+
+		QMessageBox::critical(this, "Invalid Script",
+				      "Couldn't load the capture script");
+		return;
+	}
+
+	/* Set the button state to running and start the capture unconditionally.*/
+	if (captureScriptButton_)
+		captureScriptButton_->setText("Running");
+
+	if (!isCapturing_)
+		toggleCapture(true);
+}
+
+/**
+ * \brief Load a capture script for handling the capture session.
+ *
+ * If already capturing, it would restart the capture.
+ */
+void MainWindow::handleScriptButton()
+{
+	if (script_) {
+		/*
+		 * This is the second valid press of load script button,
+		 * It indicates stopping, Stop and set button for new script.
+		 */
+		script_.reset();
+		captureScriptButton_->setText("Stopped");
+		return;
+	}
+
+	captureScriptPath_ = QFileDialog::getOpenFileName(this, "Open Capture Script",
+							  QDir::currentPath(), "Capture Script (*.yaml)")
+				     .toStdString();
+
+	if (captureScriptPath_.empty())
+		captureScriptButton_->setText("Stopped");
+	else
+		captureScriptButton_->setText("Loaded");
 }
 
 /* -----------------------------------------------------------------------------
@@ -379,6 +444,16 @@ std::string MainWindow::chooseCamera()
 			updateCameraInfo(cm_->get(cameraIdComboBox_->currentText().toStdString()));
 		});
 
+	/* Capture Script Button. */
+	captureScriptButton_ = new QPushButton;
+	if (script_)
+		captureScriptButton_->setText("Running");
+	else
+		captureScriptButton_->setText("Stopped");
+
+	connect(captureScriptButton_, &QPushButton::clicked,
+		this, &MainWindow::handleScriptButton);
+
 	/* Setup QDialogButtonBox. */
 	QDialogButtonBox *dialogButtonBox = new QDialogButtonBox;
 	dialogButtonBox->addButton(QDialogButtonBox::Cancel);
@@ -388,6 +463,7 @@ std::string MainWindow::chooseCamera()
 		this, [&]() {
 			result = cameraIdComboBox_->currentText().toStdString();
 			cameraSelectDialog->accept();
+			execCaptureScript();
 		});
 
 	connect(dialogButtonBox, &QDialogButtonBox::rejected,
@@ -401,6 +477,7 @@ std::string MainWindow::chooseCamera()
 	cameraSelectLayout->addRow("Camera: ", cameraIdComboBox_);
 	cameraSelectLayout->addRow("Location: ", cameraLocation_);
 	cameraSelectLayout->addRow("Model: ", cameraModel_);
+	cameraSelectLayout->addRow("Capture Script: ", captureScriptButton_);
 
 	cameraSelectLayout->addWidget(dialogButtonBox);
 
@@ -610,6 +687,7 @@ int MainWindow::startCapture()
 	previousFrames_ = 0;
 	framesCaptured_ = 0;
 	lastBufferTime_ = 0;
+	queueCount_ = 0;
 
 	ret = camera_->start();
 	if (ret) {
@@ -894,5 +972,10 @@ void MainWindow::renderComplete(FrameBuffer *buffer)
 
 int MainWindow::queueRequest(Request *request)
 {
+	if (script_)
+		request->controls() = script_->frameControls(queueCount_);
+
+	queueCount_++;
+
 	return camera_->queueRequest(request);
 }
