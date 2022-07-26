@@ -150,6 +150,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	cm_->cameraAdded.connect(this, &MainWindow::addCamera);
 	cm_->cameraRemoved.connect(this, &MainWindow::removeCamera);
 
+	if (options_.isSet(OptCaptureScript)) {
+		captureScriptPath_ = options_[OptCaptureScript].toString();
+	}
+
 	/* Open the camera and start capture. */
 	ret = openCamera();
 	if (ret < 0) {
