@@ -145,6 +145,9 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	cm_->cameraAdded.connect(this, &MainWindow::addCamera);
 	cm_->cameraRemoved.connect(this, &MainWindow::removeCamera);
 
+	if (options_.isSet(OptCaptureScript))
+		scriptPath_ = options_[OptCaptureScript].toString();
+
 	cameraSelectorDialog_ = new CameraSelectorDialog(cm_, scriptPath_, this);
 	connect(cameraSelectorDialog_, &CameraSelectorDialog::stopCaptureScript,
 		this, &MainWindow::stopCaptureScript);
@@ -157,9 +160,13 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	}
 
 	/* Start capture script. */
-	if (!scriptPath_.empty())
+	if (!scriptPath_.empty()) {
 		ret = loadCaptureScript();
-
+		if (options_.isSet(OptCaptureScript)) {
+			quit();
+			return;
+		}
+	}
 	startStopAction_->setChecked(true);
 }
 
