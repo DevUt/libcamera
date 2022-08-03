@@ -16,7 +16,10 @@
 
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
@@ -291,23 +294,43 @@ void MainWindow::switchCamera(int index)
 std::string MainWindow::chooseCamera()
 {
 	QStringList cameras;
-	bool result;
-
-	/* If only one camera is available, use it automatically. */
-	if (cm_->cameras().size() == 1)
-		return cm_->cameras()[0]->id();
+	std::string result;
 
 	/* Present a dialog box to pick a camera. */
+	QDialog *cameraSelectDialog = new QDialog(this);
+
+	/* Setup a QComboBox to display camera Ids. */
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameras.append(QString::fromStdString(cam->id()));
+		cameras.push_back(QString::fromStdString(cam->id()));
 
-	QString id = QInputDialog::getItem(this, "Select Camera",
-					   "Camera:", cameras, 0,
-					   false, &result);
-	if (!result)
-		return std::string();
+	QComboBox *cameraIdComboBox = new QComboBox;
+	cameraIdComboBox->addItems(cameras);
 
-	return id.toStdString();
+	/* Setup QDialogButtonBox. */
+	QDialogButtonBox *dialogButtonBox = new QDialogButtonBox;
+	dialogButtonBox->addButton(QDialogButtonBox::Cancel);
+	dialogButtonBox->addButton(QDialogButtonBox::Ok);
+
+	connect(dialogButtonBox, &QDialogButtonBox::accepted,
+		this, [&]() {
+			result = cameraIdComboBox->currentText().toStdString();
+			cameraSelectDialog->accept();
+		});
+
+	connect(dialogButtonBox, &QDialogButtonBox::rejected,
+		this, [&]() {
+			result = std::string();
+			cameraSelectDialog->reject();
+		});
+
+	/* Setup the layout for the dialog. */
+	QFormLayout *cameraSelectLayout = new QFormLayout(cameraSelectDialog);
+	cameraSelectLayout->addRow("Camera: ", cameraIdComboBox);
+	cameraSelectLayout->addWidget(dialogButtonBox);
+
+	cameraSelectDialog->exec();
+
+	return result;
 }
 
 int MainWindow::openCamera()
