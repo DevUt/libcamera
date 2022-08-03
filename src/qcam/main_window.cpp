@@ -12,6 +12,7 @@
 #include <string>
 
 #include <libcamera/camera_manager.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/version.h>
 
 #include <QComboBox>
@@ -23,6 +24,7 @@
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
+#include <QLabel>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -291,6 +293,47 @@ void MainWindow::switchCamera(int index)
 	startStopAction_->setChecked(true);
 }
 
+QString MainWindow::getCameraLocation(const std::shared_ptr<Camera> &camera)
+{
+	if (camera == nullptr)
+		return QString();
+
+	const ControlList &cameraProperties = camera->properties();
+	const auto &location = cameraProperties.get(properties::Location);
+
+	if (location) {
+		switch (*location) {
+		case properties::CameraLocationFront:
+			return "Internal front camera ";
+		case properties::CameraLocationBack:
+			return "Internal back camera ";
+		case properties::CameraLocationExternal:
+			return "External camera ";
+		}
+	}
+	return QString();
+}
+
+QString MainWindow::getCameraModel(const std::shared_ptr<Camera> &camera)
+{
+	if (camera == nullptr)
+		return QString();
+
+	const ControlList &cameraProperties = camera->properties();
+	const auto &model = cameraProperties.get(properties::Model);
+
+	if (model)
+		return QString::fromStdString(*model);
+
+	return QString();
+}
+
+void MainWindow::updateCameraInfo(const std::shared_ptr<libcamera::Camera> &camera)
+{
+	cameraLocation_->setText(getCameraLocation(camera));
+	cameraModel_->setText(getCameraModel(camera));
+}
+
 std::string MainWindow::chooseCamera()
 {
 	std::string result;
@@ -302,6 +345,29 @@ std::string MainWindow::chooseCamera()
 	cameraIdComboBox_ = new QComboBox;
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
 		cameraIdComboBox_->addItem(QString::fromStdString(cam->id()));
+
+	/* Display Camera Informtion in the Selection Dialog. */
+	cameraLocation_ = new QLabel;
+	cameraModel_ = new QLabel;
+
+	std::shared_ptr<Camera> currentCamera;
+
+	/*
+	 * When the Qdialog starts, the QComboBox would have the first
+	 * camera's Id as its currentText.
+	 */
+	if (cm_->cameras().size())
+		currentCamera = cm_->cameras()[0];
+	else
+		currentCamera = nullptr;
+
+	if (currentCamera)
+		updateCameraInfo(currentCamera);
+
+	connect(cameraIdComboBox_, &QComboBox::currentTextChanged,
+		this, [&]() {
+			updateCameraInfo(cm_->get(cameraIdComboBox_->currentText().toStdString()));
+		});
 
 	/* Setup QDialogButtonBox. */
 	QDialogButtonBox *dialogButtonBox = new QDialogButtonBox;
@@ -323,6 +389,9 @@ std::string MainWindow::chooseCamera()
 	/* Setup the layout for the dialog. */
 	QFormLayout *cameraSelectLayout = new QFormLayout(cameraSelectDialog);
 	cameraSelectLayout->addRow("Camera: ", cameraIdComboBox_);
+	cameraSelectLayout->addRow("Location: ", cameraLocation_);
+	cameraSelectLayout->addRow("Model: ", cameraModel_);
+
 	cameraSelectLayout->addWidget(dialogButtonBox);
 
 	cameraSelectDialog->exec();

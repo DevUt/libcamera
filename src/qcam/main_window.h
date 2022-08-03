@@ -20,6 +20,7 @@
 
 #include <QElapsedTimer>
 #include <QIcon>
+#include <QLabel>
 #include <QMainWindow>
 #include <QMutex>
 #include <QObject>
@@ -88,6 +89,10 @@ private:
 	void processHotplug(HotplugEvent *e);
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
+	QString getCameraLocation(const std::shared_ptr<libcamera::Camera> &camera);
+	QString getCameraModel(const std::shared_ptr<libcamera::Camera> &camera);
+	void updateCameraInfo(const std::shared_ptr<libcamera::Camera> &camera);
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
@@ -102,6 +107,8 @@ private:
 	QTimer titleTimer_;
 
 	QPointer<QComboBox> cameraIdComboBox_;
+	QLabel *cameraLocation_;
+	QLabel *cameraModel_;
 
 	/* Options */
 	const OptionsParser::Options &options_;
