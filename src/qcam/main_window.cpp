@@ -293,18 +293,15 @@ void MainWindow::switchCamera(int index)
 
 std::string MainWindow::chooseCamera()
 {
-	QStringList cameras;
 	std::string result;
 
 	/* Present a dialog box to pick a camera. */
 	QDialog *cameraSelectDialog = new QDialog(this);
 
 	/* Setup a QComboBox to display camera Ids. */
+	cameraIdComboBox_ = new QComboBox;
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameras.push_back(QString::fromStdString(cam->id()));
-
-	QComboBox *cameraIdComboBox = new QComboBox;
-	cameraIdComboBox->addItems(cameras);
+		cameraIdComboBox_->addItem(QString::fromStdString(cam->id()));
 
 	/* Setup QDialogButtonBox. */
 	QDialogButtonBox *dialogButtonBox = new QDialogButtonBox;
@@ -313,7 +310,7 @@ std::string MainWindow::chooseCamera()
 
 	connect(dialogButtonBox, &QDialogButtonBox::accepted,
 		this, [&]() {
-			result = cameraIdComboBox->currentText().toStdString();
+			result = cameraIdComboBox_->currentText().toStdString();
 			cameraSelectDialog->accept();
 		});
 
@@ -325,7 +322,7 @@ std::string MainWindow::chooseCamera()
 
 	/* Setup the layout for the dialog. */
 	QFormLayout *cameraSelectLayout = new QFormLayout(cameraSelectDialog);
-	cameraSelectLayout->addRow("Camera: ", cameraIdComboBox);
+	cameraSelectLayout->addRow("Camera: ", cameraIdComboBox_);
 	cameraSelectLayout->addWidget(dialogButtonBox);
 
 	cameraSelectDialog->exec();
@@ -628,7 +625,12 @@ void MainWindow::processHotplug(HotplugEvent *e)
 	HotplugEvent::PlugEvent event = e->hotplugEvent();
 
 	if (event == HotplugEvent::HotPlug) {
-		cameraCombo_->addItem(QString::fromStdString(camera->id()));
+		QString cameraId = QString::fromStdString(camera->id());
+		cameraCombo_->addItem(cameraId);
+
+		/* Update cameraIdCombox_ to include the new camera. */
+		if (cameraIdComboBox_)
+			cameraIdComboBox_->addItem(cameraId);
 	} else if (event == HotplugEvent::HotUnplug) {
 		/* Check if the currently-streaming camera is removed. */
 		if (camera == camera_.get()) {
@@ -636,6 +638,11 @@ void MainWindow::processHotplug(HotplugEvent *e)
 			camera_->release();
 			camera_.reset();
 			cameraCombo_->setCurrentIndex(0);
+		}
+
+		if (cameraIdComboBox_) {
+			int cameraIdIndex = cameraIdComboBox_->findText(QString::fromStdString(camera_->id()));
+			cameraIdComboBox_->removeItem(cameraIdIndex);
 		}
 
 		int camIndex = cameraCombo_->findText(QString::fromStdString(camera->id()));

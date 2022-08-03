@@ -23,7 +23,9 @@
 #include <QMainWindow>
 #include <QMutex>
 #include <QObject>
+#include <QPointer>
 #include <QQueue>
+#include <QStringList>
 #include <QTimer>
 
 #include "../cam/stream_options.h"
@@ -98,6 +100,8 @@ private:
 
 	QString title_;
 	QTimer titleTimer_;
+
+	QPointer<QComboBox> cameraIdComboBox_;
 
 	/* Options */
 	const OptionsParser::Options &options_;
