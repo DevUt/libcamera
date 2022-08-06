@@ -19,7 +19,6 @@
 #include <QFileDialog>
 #include <QImage>
 #include <QImageWriter>
-#include <QInputDialog>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -30,6 +29,7 @@
 
 #include "../cam/image.h"
 
+#include "cam_select_dialog.h"
 #include "dng_writer.h"
 #ifndef QT_NO_OPENGL
 #include "viewfinder_gl.h"
@@ -143,6 +143,8 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	/* Hotplug/unplug support */
 	cm_->cameraAdded.connect(this, &MainWindow::addCamera);
 	cm_->cameraRemoved.connect(this, &MainWindow::removeCamera);
+
+	cameraSelectorDialog_ = new CameraSelectorDialog(cm_, this);
 
 	/* Open the camera and start capture. */
 	ret = openCamera();
@@ -290,34 +292,17 @@ void MainWindow::switchCamera(int index)
 
 std::string MainWindow::chooseCamera()
 {
-	QStringList cameras;
-	bool result;
-
-	/* If only one camera is available, use it automatically. */
-	if (cm_->cameras().size() == 1)
-		return cm_->cameras()[0]->id();
-
-	/* Present a dialog box to pick a camera. */
-	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameras.append(QString::fromStdString(cam->id()));
-
-	QString id = QInputDialog::getItem(this, "Select Camera",
-					   "Camera:", cameras, 0,
-					   false, &result);
-	if (!result)
+	if (cameraSelectorDialog_->exec() != QDialog::Accepted)
 		return std::string();
 
-	return id.toStdString();
+	return cameraSelectorDialog_->getCameraId();
 }
 
 int MainWindow::openCamera()
 {
 	std::string cameraName;
 
-	/*
-	 * Use the camera specified on the command line, if any, or display the
-	 * camera selection dialog box otherwise.
-	 */
+	/* Use camera provided on the command line else prompt for selection.*/
 	if (options_.isSet(OptCamera))
 		cameraName = static_cast<std::string>(options_[OptCamera]);
 	else

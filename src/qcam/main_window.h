@@ -35,6 +35,7 @@ class QComboBox;
 
 class Image;
 class HotplugEvent;
+class CameraSelectorDialog;
 
 enum {
 	OptCamera = 'c',
@@ -98,6 +99,8 @@ private:
 
 	QString title_;
 	QTimer titleTimer_;
+
+	CameraSelectorDialog *cameraSelectorDialog_;
 
 	/* Options */
 	const OptionsParser::Options &options_;
