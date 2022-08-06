@@ -57,6 +57,11 @@ public:
 		return cameraIdComboBox_->currentText().toStdString();
 	}
 
+	std::string getCurrentCamera()
+	{
+		return cameraIdComboBox_->currentText().toStdString();
+	}
+
 	/* Hotplug / Unplug Support. */
 	void cameraAdded(libcamera::Camera *camera)
 	{
