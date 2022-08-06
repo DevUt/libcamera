@@ -26,6 +26,7 @@ qcam_sources = files([
 ])
 
 qcam_moc_headers = files([
+    'cam_select_dialog.h',
     'main_window.h',
     'viewfinder_qt.h',
 ])
