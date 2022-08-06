@@ -28,6 +28,7 @@
 
 #include "../cam/stream_options.h"
 
+#include "cam_select_dialog.h"
 #include "viewfinder.h"
 
 class QAction;
@@ -98,6 +99,8 @@ private:
 
 	QString title_;
 	QTimer titleTimer_;
+
+	CameraSelectorDialog *cameraSelectorDialog_;
 
 	/* Options */
 	const OptionsParser::Options &options_;

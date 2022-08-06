@@ -19,7 +19,6 @@
 #include <QFileDialog>
 #include <QImage>
 #include <QImageWriter>
-#include <QInputDialog>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -30,6 +29,7 @@
 
 #include "../cam/image.h"
 
+#include "cam_select_dialog.h"
 #include "dng_writer.h"
 #ifndef QT_NO_OPENGL
 #include "viewfinder_gl.h"
@@ -97,8 +97,8 @@ private:
 };
 
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
-	: saveRaw_(nullptr), options_(options), cm_(cm), allocator_(nullptr),
-	  isCapturing_(false), captureRaw_(false)
+	: saveRaw_(nullptr), cameraSelectorDialog_(nullptr), options_(options),
+	  cm_(cm), allocator_(nullptr), isCapturing_(false), captureRaw_(false)
 {
 	int ret;
 
@@ -290,38 +290,26 @@ void MainWindow::switchCamera(int index)
 
 std::string MainWindow::chooseCamera()
 {
-	QStringList cameras;
-	bool result;
-
-	/* If only one camera is available, use it automatically. */
-	if (cm_->cameras().size() == 1)
-		return cm_->cameras()[0]->id();
-
-	/* Present a dialog box to pick a camera. */
-	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameras.append(QString::fromStdString(cam->id()));
-
-	QString id = QInputDialog::getItem(this, "Select Camera",
-					   "Camera:", cameras, 0,
-					   false, &result);
-	if (!result)
-		return std::string();
-
-	return id.toStdString();
-}
-
-int MainWindow::openCamera()
-{
-	std::string cameraName;
+	/* Construct the selection dialog, only the first time. */
+	if (!cameraSelectorDialog_)
+		cameraSelectorDialog_ = new CameraSelectorDialog(cm_, this);
 
 	/*
 	 * Use the camera specified on the command line, if any, or display the
 	 * camera selection dialog box otherwise.
 	 */
 	if (options_.isSet(OptCamera))
-		cameraName = static_cast<std::string>(options_[OptCamera]);
+		return static_cast<std::string>(options_[OptCamera]);
+
+	if (cameraSelectorDialog_->exec() == QDialog::Accepted)
+		return cameraSelectorDialog_->getCameraId();
 	else
-		cameraName = chooseCamera();
+		return std::string();
+}
+
+int MainWindow::openCamera()
+{
+	std::string cameraName = chooseCamera();
 
 	if (cameraName == "")
 		return -EINVAL;
