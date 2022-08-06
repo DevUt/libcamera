@@ -48,3 +48,15 @@ std::string CameraSelectorDialog::getCameraId()
 {
 	return cameraIdComboBox_->currentText().toStdString();
 }
+
+/* Hotplug / Unplug Support. */
+void CameraSelectorDialog::addCamera(QString camearaId)
+{
+	cameraIdComboBox_->addItem(camearaId);
+}
+
+void CameraSelectorDialog::removeCamera(QString cameraId)
+{
+	int cameraIndex = cameraIdComboBox_->findText(cameraId);
+	cameraIdComboBox_->removeItem(cameraIndex);
+}
