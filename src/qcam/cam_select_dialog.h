@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <libcamera/camera.h>
@@ -54,6 +55,20 @@ public:
 	std::string getCameraId()
 	{
 		return cameraIdComboBox_->currentText().toStdString();
+	}
+
+	/* Hotplug / Unplug Support. */
+	void cameraAdded(libcamera::Camera *camera)
+	{
+		cameraIdComboBox_->addItem(QString::fromStdString(camera->id()));
+	}
+
+	void cameraRemoved(libcamera::Camera *camera)
+	{
+		int cameraIndex = cameraIdComboBox_->findText(
+			QString::fromStdString(camera->id()));
+
+		cameraIdComboBox_->removeItem(cameraIndex);
 	}
 
 private:

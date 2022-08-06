@@ -22,8 +22,8 @@
 #include <QIcon>
 #include <QMainWindow>
 #include <QMutex>
-#include <QPointer>
 #include <QObject>
+#include <QPointer>
 #include <QQueue>
 #include <QTimer>
 
