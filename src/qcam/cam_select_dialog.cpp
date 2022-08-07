@@ -14,13 +14,18 @@
 
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QFileDialog>
 #include <QFormLayout>
+#include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
+#include <QPushButton>
 #include <QString>
+#include <QWidget>
 
 CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManager,
-					   QWidget *parent)
-	: QDialog(parent), cm_(cameraManager)
+					   std::string scriptPath, QWidget *parent)
+	: QDialog(parent), cm_(cameraManager), scriptPath_(scriptPath)
 {
 	/* Use a QFormLayout for the dialog. */
 	QFormLayout *layout = new QFormLayout(this);
@@ -38,6 +43,39 @@ CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManag
 	connect(cameraIdComboBox_, &QComboBox::currentTextChanged,
 		this, &CameraSelectorDialog::updateCamInfo);
 
+	/* Set capture script selection / removal button. */
+	QWidget *captureWidget = new QWidget(this);
+	QHBoxLayout *captureLayout = new QHBoxLayout(captureWidget);
+
+	scriptFileLine_ = new QLabel;
+	scriptFileLine_->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
+
+	chooseCaptureScriptButton_ = new QPushButton;
+	chooseCaptureScriptButton_->setIcon(QIcon::fromTheme("document-open",
+							     QIcon(":upload.svg")));
+	connect(chooseCaptureScriptButton_, &QPushButton::clicked,
+		this, &CameraSelectorDialog::selectCaptureScript);
+
+	QPushButton *stopCaptureScriptButton = new QPushButton;
+	stopCaptureScriptButton->setIcon(QIcon::fromTheme("edit-clear",
+							  QIcon(":delete.svg")));
+	connect(stopCaptureScriptButton, &QPushButton::clicked,
+		this, &CameraSelectorDialog::resetCaptureScript);
+
+	captureLayout->addWidget(scriptFileLine_);
+	captureLayout->addWidget(chooseCaptureScriptButton_);
+	captureLayout->addWidget(stopCaptureScriptButton);
+	captureLayout->setMargin(0);
+
+	/* Set the file name of the capture script. */
+	if (scriptPath_.empty()) {
+		scriptFileLine_->setText("No File Selected");
+	} else {
+		scriptFileInfo_.setFile(QString::fromStdString(scriptPath_));
+		scriptFileLine_->setText(scriptFileInfo_.fileName());
+		scriptFileLine_->setToolTip(scriptFileInfo_.filePath());
+	}
+
 	/* Setup the QDialogButton Box */
 	QDialogButtonBox *buttonBox =
 		new QDialogButtonBox(QDialogButtonBox::Ok |
@@ -52,6 +90,7 @@ CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManag
 	layout->addRow("Camera:", cameraIdComboBox_);
 	layout->addRow("Location:", cameraLocation_);
 	layout->addRow("Model:", cameraModel_);
+	layout->addRow("Capture Script:", captureWidget);
 	layout->addWidget(buttonBox);
 }
 
@@ -109,4 +148,47 @@ void CameraSelectorDialog::updateCamInfo(QString cameraId)
 				    .value_or("Unknown");
 
 	cameraModel_->setText(QString::fromStdString(model));
+}
+
+/* Capture script support. */
+void CameraSelectorDialog::selectCaptureScript()
+{
+	selectedScriptPath_ = QFileDialog::getOpenFileName(this,
+							   "Run Capture Script", QDir::currentPath(),
+							   "Capture Script (*.yaml)")
+				      .toStdString();
+
+	if (!selectedScriptPath_.empty()) {
+		scriptFileInfo_.setFile(QString::fromStdString(selectedScriptPath_));
+		scriptFileLine_->setText(scriptFileInfo_.fileName());
+		scriptFileLine_->setToolTip(scriptFileInfo_.filePath());
+	} else {
+		selectedScriptPath_ = scriptPath_;
+	}
+}
+
+void CameraSelectorDialog::resetCaptureScript()
+{
+	Q_EMIT stopCaptureScript();
+	scriptPath_.clear();
+	selectedScriptPath_.clear();
+	scriptFileLine_->setText("No File Selected");
+}
+
+void CameraSelectorDialog::accept()
+{
+	scriptPath_ = selectedScriptPath_;
+	QDialog::accept();
+}
+
+void CameraSelectorDialog::reject()
+{
+	if (scriptPath_.empty()) {
+		scriptFileLine_->setText("No File Selected");
+	} else {
+		scriptFileInfo_.setFile(QString::fromStdString(scriptPath_));
+		scriptFileLine_->setText(scriptFileInfo_.fileName());
+		scriptFileLine_->setToolTip(scriptFileInfo_.filePath());
+	}
+	QDialog::reject();
 }

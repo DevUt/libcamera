@@ -27,6 +27,7 @@
 #include <QQueue>
 #include <QTimer>
 
+#include "../cam/capture_script.h"
 #include "../cam/stream_options.h"
 
 #include "viewfinder.h"
@@ -89,6 +90,9 @@ private:
 	void processHotplug(HotplugEvent *e);
 	void processViewfinder(libcamera::FrameBuffer *buffer);
 
+	int loadCaptureScript();
+	void stopCaptureScript();
+
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
@@ -129,6 +133,9 @@ private:
 	QElapsedTimer frameRateInterval_;
 	uint32_t previousFrames_;
 	uint32_t framesCaptured_;
+	uint32_t queueCount_;
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
+	std::unique_ptr<CaptureScript> script_;
+	std::string scriptPath_;
 };

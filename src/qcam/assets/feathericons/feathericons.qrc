@@ -3,7 +3,9 @@
 <qresource>
 	<file>aperture.svg</file>
 	<file>camera-off.svg</file>
+	<file>delete.svg</file>
 	<file>play-circle.svg</file>
+	<file>upload.svg</file>
 	<file>save.svg</file>
 	<file>stop-circle.svg</file>
 	<file>x-circle.svg</file>

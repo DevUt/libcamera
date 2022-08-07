@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <iomanip>
+#include <memory>
 #include <string>
 
 #include <libcamera/camera_manager.h>
@@ -18,6 +19,7 @@
 #include <QFileDialog>
 #include <QImage>
 #include <QImageWriter>
+#include <QMessageBox>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -143,7 +145,9 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	cm_->cameraAdded.connect(this, &MainWindow::addCamera);
 	cm_->cameraRemoved.connect(this, &MainWindow::removeCamera);
 
-	cameraSelectorDialog_ = new CameraSelectorDialog(cm_, this);
+	cameraSelectorDialog_ = new CameraSelectorDialog(cm_, scriptPath_, this);
+	connect(cameraSelectorDialog_, &CameraSelectorDialog::stopCaptureScript,
+		this, &MainWindow::stopCaptureScript);
 
 	/* Open the camera and start capture. */
 	ret = openCamera();
@@ -151,6 +155,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 		quit();
 		return;
 	}
+
+	/* Start capture script. */
+	if (!scriptPath_.empty())
+		ret = loadCaptureScript();
 
 	startStopAction_->setChecked(true);
 }
@@ -266,8 +274,11 @@ void MainWindow::switchCamera()
 	if (newCameraId.empty())
 		return;
 
-	if (camera_ && newCameraId == camera_->id())
+	if (camera_ && newCameraId == camera_->id()) {
+		// When user opens camera selection dialog for CaptureScript selection
+		loadCaptureScript();
 		return;
+	}
 
 	const std::shared_ptr<Camera> &cam = cm_->get(newCameraId);
 
@@ -287,16 +298,62 @@ void MainWindow::switchCamera()
 	camera_->release();
 	camera_ = cam;
 
+	loadCaptureScript();
+
 	startStopAction_->setChecked(true);
 
 	/* Display the current cameraId in the toolbar .*/
 	cameraSelectButton_->setText(QString::fromStdString(newCameraId));
 }
 
+void MainWindow::stopCaptureScript()
+{
+	if (script_)
+		script_.reset();
+}
+/**
+ * \brief Loads and validates the current capture script
+ *
+ * returns -EINVAL on failure and 0 on success
+ */
+int MainWindow::loadCaptureScript()
+{
+	if (scriptPath_.empty() || camera_ == nullptr)
+		return -EINVAL;
+
+	auto script = std::make_unique<CaptureScript>(camera_, scriptPath_);
+
+	if (!script->valid()) {
+		script.reset();
+
+		QMessageBox::critical(this, "Invalid Script",
+				      "Couldn't load the capture script");
+
+		return -EINVAL;
+	}
+
+	/*
+	 * If we are already capturing, stop so we don't have stuck image
+	 * in viewfinder.
+	 */
+	bool wasCapturing = isCapturing_;
+	if (isCapturing_)
+		toggleCapture(false);
+
+	script_ = std::move(script);
+
+	/* Start capture again if we were capturing before. */
+	if (wasCapturing)
+		toggleCapture(true);
+	return 0;
+}
+
 std::string MainWindow::chooseCamera()
 {
 	if (cameraSelectorDialog_->exec() != QDialog::Accepted)
 		return std::string();
+
+	scriptPath_ = cameraSelectorDialog_->getCaptureScript();
 
 	return cameraSelectorDialog_->getCameraId();
 }
@@ -499,6 +556,7 @@ int MainWindow::startCapture()
 	previousFrames_ = 0;
 	framesCaptured_ = 0;
 	lastBufferTime_ = 0;
+	queueCount_ = 0;
 
 	ret = camera_->start();
 	if (ret) {
@@ -777,5 +835,10 @@ void MainWindow::renderComplete(FrameBuffer *buffer)
 
 int MainWindow::queueRequest(Request *request)
 {
+	if (script_)
+		request->controls() = script_->frameControls(queueCount_);
+
+	queueCount_++;
+
 	return camera_->queueRequest(request);
 }
