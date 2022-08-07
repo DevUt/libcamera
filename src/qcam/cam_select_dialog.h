@@ -18,13 +18,15 @@
 #include <QDialog>
 #include <QLabel>
 #include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 
 class CameraSelectorDialog : public QDialog
 {
 	Q_OBJECT
 public:
 	CameraSelectorDialog(libcamera::CameraManager *cameraManager,
-			     bool isScriptRunning, QWidget *parent);
+			     bool isScriptRunning, std::string scriptPath, QWidget *parent);
 
 	~CameraSelectorDialog() = default;
 
@@ -62,5 +64,8 @@ private:
 	QComboBox *cameraIdComboBox_;
 	QLabel *cameraLocation_;
 	QLabel *cameraModel_;
+
+	QVBoxLayout *captureWidgetLayout_;
 	QPushButton *captureScriptButton_;
+	QLabel *scriptPathLabel_;
 };
