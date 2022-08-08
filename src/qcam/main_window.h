@@ -23,6 +23,7 @@
 #include <QMainWindow>
 #include <QMutex>
 #include <QObject>
+#include <QPushButton>
 #include <QQueue>
 #include <QTimer>
 
@@ -60,7 +61,7 @@ private Q_SLOTS:
 	void quit();
 	void updateTitle();
 
-	void switchCamera(int index);
+	void switchCamera();
 	void toggleCapture(bool start);
 
 	void saveImageAs();
@@ -90,7 +91,7 @@ private:
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
-	QComboBox *cameraCombo_;
+	QPushButton *cameraSelectButton_;
 	QAction *saveRaw_;
 	ViewFinder *viewfinder_;
 
