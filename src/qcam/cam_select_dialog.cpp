@@ -7,6 +7,7 @@
 
 #include "cam_select_dialog.h"
 
+#include <memory>
 #include <string>
 
 #include <libcamera/camera.h>
@@ -30,6 +31,14 @@ CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManag
 	for (const auto &cam : cm_->cameras())
 		cameraIdComboBox_->addItem(QString::fromStdString(cam->id()));
 
+	/* Set camera information labels. */
+	cameraLocation_ = new QLabel;
+	cameraModel_ = new QLabel;
+
+	handleCameraChange();
+	connect(cameraIdComboBox_, &QComboBox::currentTextChanged,
+		this, &CameraSelectorDialog::handleCameraChange);
+
 	/* Setup the QDialogButton Box */
 	QDialogButtonBox *buttonBox =
 		new QDialogButtonBox(QDialogButtonBox::Ok |
@@ -41,7 +50,10 @@ CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManag
 		this, &QDialog::reject);
 
 	/* Set the layout. */
+
 	layout->addRow("Camera:", cameraIdComboBox_);
+	layout->addRow("Location:", cameraLocation_);
+	layout->addRow("Model:", cameraModel_);
 	layout->addWidget(buttonBox);
 }
 
@@ -62,4 +74,44 @@ void CameraSelectorDialog::cameraRemoved(libcamera::Camera *camera)
 		QString::fromStdString(camera->id()));
 
 	cameraIdComboBox_->removeItem(cameraIndex);
+}
+
+/* Camera Information */
+void CameraSelectorDialog::handleCameraChange()
+{
+	updateCamInfo(cm_->get(getCameraId()));
+}
+
+void CameraSelectorDialog::updateCamInfo(const std::shared_ptr<libcamera::Camera> &camera)
+{
+	if (!camera)
+		return;
+
+	const libcamera::ControlList &cameraProperties = camera->properties();
+
+	const auto &location =
+		cameraProperties.get(libcamera::properties::Location);
+	if (location) {
+		switch (*location) {
+		case libcamera::properties::CameraLocationFront:
+			cameraLocation_->setText("Internal front camera");
+			break;
+		case libcamera::properties::CameraLocationBack:
+			cameraLocation_->setText("Internal back camera");
+			break;
+		case libcamera::properties::CameraLocationExternal:
+			cameraLocation_->setText("External camera");
+			break;
+		default:
+			cameraLocation_->setText("Unknown");
+		}
+	} else {
+		cameraLocation_->setText("Unknown");
+	}
+
+	const auto &model = cameraProperties
+				    .get(libcamera::properties::Model)
+				    .value_or("Unknown");
+
+	cameraModel_->setText(QString::fromStdString(model));
 }
