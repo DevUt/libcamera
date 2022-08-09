@@ -11,11 +11,14 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/controls.h>
+#include <libcamera/property_ids.h>
 
 #include <QDialog>
 #include <QString>
 
 class QComboBox;
+class QLabel;
 
 class CameraSelectorDialog : public QDialog
 {
@@ -32,9 +35,14 @@ public:
 	void addCamera(QString cameraId);
 	void removeCamera(QString cameraId);
 
+	/* Camera Information */
+	void updateCamInfo(QString cameraId);
+
 private:
 	libcamera::CameraManager *cm_;
 
 	/* UI elements. */
 	QComboBox *cameraIdComboBox_;
+	QLabel *cameraLocation_;
+	QLabel *cameraModel_;
 };
